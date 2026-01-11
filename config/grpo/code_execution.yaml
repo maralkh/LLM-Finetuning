@@ -1,0 +1,73 @@
+# GRPO with code execution reward
+# Usage: python scripts/train.py --config config/grpo/code_execution.yaml
+#
+# Uses test case execution as reward signal.
+# Requires code datasets with test cases (HumanEval, MBPP).
+
+model:
+  name: results/sft/code_sft/final  # Start from code SFT
+  dtype: bfloat16
+  use_lora: true
+  lora:
+    r: 16
+    alpha: 32
+    dropout: 0.05
+  gradient_checkpointing: true
+
+data:
+  name: mbpp  # Has test cases
+  split: train
+  template: code
+  max_samples: 500
+
+eval_data:
+  name: humaneval
+  template: code
+  max_samples: 50
+
+trainer:
+  type: grpo
+  output_dir: results/grpo
+  run_name: code_grpo
+  
+  # Duration
+  num_epochs: 1
+  
+  # Batch size
+  batch_size: 1  # Process one prompt at a time
+  gradient_accumulation_steps: 8
+  
+  # GRPO specific
+  group_size: 8  # Generate 8 code solutions per prompt
+  kl_coef: 0.05
+  baseline_type: mean  # mean, min, or none
+  normalize_rewards: true
+  
+  # Generation
+  max_new_tokens: 512
+  temperature: 0.8
+  top_p: 0.95
+  
+  # Optimizer
+  learning_rate: 1e-6
+  weight_decay: 0.01
+  warmup_ratio: 0.05
+  lr_scheduler_type: cosine
+  max_grad_norm: 1.0
+  
+  # Sequence
+  max_seq_length: 1024
+  
+  # Logging
+  logging_steps: 5
+  save_steps: 100
+  eval_steps: 100
+  
+  seed: 42
+
+reward:
+  type: code_execution
+  positive: 1.0
+  negative: 0.0
+  timeout: 5.0
+  partial_credit: true  # Give credit for partial test passes

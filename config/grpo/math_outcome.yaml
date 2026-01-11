@@ -1,0 +1,75 @@
+# GRPO with outcome-based reward on GSM8K
+# Usage: python scripts/train.py --config config/grpo/math_outcome.yaml
+#
+# GRPO (Group Relative Policy Optimization):
+# - No value model needed (simpler than PPO)
+# - Samples multiple responses per prompt
+# - Uses relative rewards within group for advantage estimation
+# - Efficient for verifiable tasks like math
+
+model:
+  # Start from SFT checkpoint for better performance
+  name: results/sft/gsm8k_sft/final  # Or use base model
+  dtype: bfloat16
+  use_lora: true
+  lora:
+    r: 16
+    alpha: 32
+    dropout: 0.05
+  gradient_checkpointing: true
+
+data:
+  name: gsm8k
+  split: train
+  template: math_cot
+  max_samples: 5000  # Subset for RL
+
+eval_data:
+  name: gsm8k
+  split: test
+  template: math_cot
+  max_samples: 200
+
+trainer:
+  type: grpo
+  output_dir: results/grpo
+  run_name: gsm8k_grpo_outcome
+  
+  # Duration (RL typically needs fewer epochs)
+  num_epochs: 1
+  
+  # Batch size (smaller for RL due to generation)
+  batch_size: 2
+  gradient_accumulation_steps: 8  # Effective batch = 16
+  
+  # GRPO specific
+  group_size: 8  # Responses per prompt
+  kl_coef: 0.05  # KL penalty to prevent divergence
+  temperature: 0.8  # Generation temperature
+  max_new_tokens: 512
+  
+  # Reward type: outcome (final answer) or process (step-by-step)
+  reward_type: outcome
+  
+  # Optimizer (lower LR for RL)
+  learning_rate: 1e-6
+  weight_decay: 0.01
+  warmup_ratio: 0.05
+  lr_scheduler_type: cosine
+  max_grad_norm: 1.0
+  
+  # Sequence
+  max_seq_length: 1024  # Shorter for RL
+  
+  # Logging
+  logging_steps: 5
+  save_steps: 200
+  eval_steps: 200
+  
+  seed: 42
+
+reward:
+  type: math_correctness
+  positive: 1.0
+  negative: 0.0
+  partial_credit: false

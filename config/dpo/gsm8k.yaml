@@ -1,0 +1,65 @@
+# DPO on GSM8K preferences
+# Usage: python scripts/train.py --config config/dpo/gsm8k.yaml
+#
+# First, generate preferences using rejection sampling,
+# or use this with a preference dataset.
+
+model:
+  # Start from SFT checkpoint for better results
+  name: results/sft/gsm8k_sft/final
+  # Or start from base model:
+  # name: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B
+  dtype: bfloat16
+  use_lora: true
+  lora:
+    r: 16
+    alpha: 32
+    dropout: 0.05
+  gradient_checkpointing: true
+
+# Preference data
+# Option 1: Generated preferences (run scripts/create_preferences.py first)
+data:
+  name: hf_preference
+  dataset_name: local_preferences  # Path to generated preferences
+  split: train
+
+# Option 2: HuggingFace preference dataset
+# data:
+#   name: hf_preference
+#   dataset_name: argilla/ultrafeedback-binarized-preferences
+#   max_samples: 10000
+
+trainer:
+  type: dpo
+  output_dir: results/dpo
+  run_name: gsm8k_dpo
+  
+  # Duration
+  num_epochs: 1
+  
+  # Batch size
+  batch_size: 2
+  gradient_accumulation_steps: 8
+  
+  # DPO specific
+  beta: 0.1  # Temperature for DPO loss
+  label_smoothing: 0.0
+  loss_type: sigmoid  # sigmoid, hinge, or ipo
+  reference_free: false  # If true, skip reference model
+  
+  # Optimizer
+  learning_rate: 5e-7  # Low LR for DPO
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  lr_scheduler_type: cosine
+  max_grad_norm: 1.0
+  
+  # Sequence
+  max_seq_length: 1024
+  
+  # Logging
+  logging_steps: 5
+  save_steps: 200
+  
+  seed: 42

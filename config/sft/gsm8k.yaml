@@ -1,0 +1,55 @@
+# SFT on GSM8K math dataset
+# Usage: python scripts/train.py --config config/sft/gsm8k.yaml
+
+model:
+  name: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B
+  dtype: bfloat16
+  use_lora: true
+  lora:
+    r: 16
+    alpha: 32
+    dropout: 0.05
+  gradient_checkpointing: true
+
+data:
+  name: gsm8k
+  split: train
+  template: math_cot
+  max_samples: null  # Use all
+
+eval_data:
+  name: gsm8k
+  split: test
+  template: math_cot
+  max_samples: 200  # Quick eval
+
+trainer:
+  type: sft
+  output_dir: results/sft
+  run_name: gsm8k_sft
+  
+  # Duration
+  num_epochs: 3
+  # max_steps: 1000  # Uncomment to limit steps
+  
+  # Batch size
+  batch_size: 4
+  gradient_accumulation_steps: 4  # Effective batch = 16
+  
+  # Optimizer
+  learning_rate: 2e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  lr_scheduler_type: cosine
+  max_grad_norm: 1.0
+  
+  # Sequence
+  max_seq_length: 2048
+  
+  # Logging & checkpoints
+  logging_steps: 10
+  save_steps: 500
+  eval_steps: 500
+  
+  # Reproducibility
+  seed: 42

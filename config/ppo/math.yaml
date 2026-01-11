@@ -1,0 +1,74 @@
+# PPO on math with outcome reward
+# Usage: python scripts/train.py --config config/ppo/math.yaml
+
+model:
+  # Start from SFT checkpoint
+  name: results/sft/gsm8k_sft/final
+  dtype: bfloat16
+  use_lora: true
+  lora:
+    r: 16
+    alpha: 32
+    dropout: 0.05
+  gradient_checkpointing: true
+
+data:
+  name: gsm8k
+  split: train
+  template: math_cot
+  max_samples: 5000
+
+eval_data:
+  name: gsm8k
+  split: test
+  template: math_cot
+  max_samples: 200
+
+trainer:
+  type: ppo
+  output_dir: results/ppo
+  run_name: gsm8k_ppo
+  
+  # Duration
+  num_epochs: 1
+  
+  # Batch size (small for PPO)
+  batch_size: 4
+  gradient_accumulation_steps: 4
+  
+  # PPO specific
+  ppo_epochs: 4  # Inner PPO epochs per batch
+  clip_range: 0.2  # PPO clip parameter
+  kl_coef: 0.05  # KL penalty coefficient
+  vf_coef: 0.5  # Value function loss coefficient
+  
+  # Generation
+  max_new_tokens: 512
+  temperature: 0.7
+  top_p: 0.95
+  
+  # Reward processing
+  normalize_rewards: true
+  reward_clip: 10.0
+  
+  # Optimizer
+  learning_rate: 1e-6
+  weight_decay: 0.01
+  warmup_ratio: 0.05
+  lr_scheduler_type: cosine
+  max_grad_norm: 1.0
+  
+  # Sequence
+  max_seq_length: 1024
+  
+  # Logging
+  logging_steps: 5
+  save_steps: 100
+  eval_steps: 100
+  
+  seed: 42
+
+reward:
+  type: math_correctness
+  positive: 1.0
+  negative: 0.0

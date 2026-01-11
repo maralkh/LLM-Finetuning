@@ -1,0 +1,27 @@
+# Core
+torch>=2.1.0
+transformers>=4.40.0
+datasets>=2.19.0
+accelerate>=0.30.0
+huggingface_hub>=0.23.0
+
+# PEFT (LoRA, etc.)
+peft>=0.10.0
+
+# RL Training
+trl>=0.8.0
+
+# Utilities
+pyyaml>=6.0
+tqdm>=4.66.0
+numpy>=1.26.0
+
+# Math evaluation
+sympy>=1.12
+
+# Code execution (sandboxed)
+multiprocess>=0.70.16
+
+# Optional: Distributed training
+# deepspeed>=0.14.0
+# flash-attn>=2.5.0

@@ -1,0 +1,52 @@
+# SFT on code generation datasets
+# Usage: python scripts/train.py --config config/sft/code.yaml
+
+model:
+  name: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B
+  dtype: bfloat16
+  use_lora: true
+  lora:
+    r: 16
+    alpha: 32
+    dropout: 0.05
+  gradient_checkpointing: true
+
+data:
+  name: codealpaca  # or magicoder for larger dataset
+  split: train
+  template: code
+  max_samples: null
+
+eval_data:
+  name: humaneval
+  template: code
+  max_samples: 50
+
+trainer:
+  type: sft
+  output_dir: results/sft
+  run_name: code_sft
+  
+  # Duration
+  num_epochs: 3
+  
+  # Batch size
+  batch_size: 4
+  gradient_accumulation_steps: 4
+  
+  # Optimizer
+  learning_rate: 2e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  lr_scheduler_type: cosine
+  max_grad_norm: 1.0
+  
+  # Sequence (shorter for code)
+  max_seq_length: 1024
+  
+  # Logging
+  logging_steps: 10
+  save_steps: 500
+  eval_steps: 500
+  
+  seed: 42
